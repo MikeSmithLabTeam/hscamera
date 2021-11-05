@@ -26,9 +26,6 @@ class MainWindow(QMainWindow):
         im = self.cam._get_img()
         self.image_viewer.setImage(im)
 
-    def gain_changed(self, value):
-        print(value)
-
     def setup_gui(self):
         self.setWindowTitle('High Speed Camera GUI')
         self.image_viewer = qtwidgets.QImageViewer(self)
@@ -48,6 +45,10 @@ class MainWindow(QMainWindow):
         gain_slider = qtwidgets.QCustomSlider(self, 'Gain', 1, 4, 1, value_=self.cam.settings['gain'], label=True)
         gain_slider.valueChanged.connect(self.cam.set_gain)
         tool_layout.addWidget(gain_slider)
+
+        fpn_correct_slider = qtwidgets.QCustomSlider(self, 'FPN correction', 0, 1, 1, value_=self.cam.settings['fpn_correction'], label=True)
+        fpn_correct_slider.valueChanged.connect(self.cam.set_fpn_correction)
+        tool_layout.addWidget(fpn_correct_slider)
 
         widget = QWidget()
         widget.setLayout(layout)
