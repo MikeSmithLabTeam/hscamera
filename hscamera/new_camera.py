@@ -12,8 +12,21 @@ from threading import Timer
 from labvision.video import WriteVideo
 from labvision.images import gray_to_bgr
 import numpy as np
+import json
 
-import cv2
+default_settings = {
+    'gain': 2,
+    'width': 1280,
+    'height': 1024,
+    'framerate': 30,
+    'exposure': 5000,
+    'fpn_correction': 1
+}
+
+with open('/opt/ConfigFiles/default_settings.json', 'w') as f:
+    json.dump(default_settings, f)
+
+
 
 class Camera:
 
@@ -21,7 +34,12 @@ class Camera:
     mcf_filename = config_dir + 'current.mcf'
     filename_base = '/home/ppxjd3/Videos/'
 
-    def __init__(self):
+    def __init__(self, settings_file=None):
+        if settings_file is None:
+            self.settings = default_settings
+        else:
+            with open(settings_file, 'r') as f:
+                self.settings = json.load(f)
 
         # Not Really sure why I have both of these lines
         self.frame_grabber = SISO.Fg_InitConfig(self.mcf_filename, 0)
@@ -30,41 +48,34 @@ class Camera:
 
         self.setup_camera_com()
 
-        self.gain = 2
-        self.set_gain(self.gain)
+        self.setup_initial_settings()
 
-        self.fpn_correction = 1
-        self.set_fpn_correction(self.fpn_correction)
-
-        self.width = 1280
-        self.height = 1024
-        self.set_width_and_height(self.width, self.height)
-
-        self.framerate = 30
-        self.set_framerate(self.framerate)
-
-        self.exposure = 5000
-        self.set_exposure(self.exposure)
+    def setup_initial_settings(self):
+        self.set_gain(self.settings['gain'])
+        self.set_fpn_correction(self.settings['fpn_correction'])
+        self.set_width_and_height(self.settings['width'], self.settings['height'])
+        self.set_framerate(self.settings['framerate'])
+        self.set_exposure(self.settings['exposure'])
 
     def set_fpn_correction(self, value):
         assert value in [0, 1], 'Value must be 0 or 1'
-        self.fpn_correction = value
-        self.send_camera_command('#F('+str(self.fpn_correction)+')')
+        self.settings['fpn_correction'] = value
+        self.send_camera_command('#F('+str(value)+')')
 
     def set_gain(self, value):
         assert value in [1, 1.5, 2, 2.25, 3, 4], 'Value must be in [1, 1.5, 2, 2.25, 3, 4]'
-        self.gain = value
-        self.send_camera_command('#G('+str(self.gain)+')')
+        self.settings['gain'] = value
+        self.send_camera_command('#G('+str(value)+')')
 
     def set_exposure(self, value):
         max_exposure = self.get_max_exposure()
         if value > max_exposure:
             print("value of ", value, " is too high, setting to maximum value of ", max_exposure)
-            self.exposure = max_exposure
+            self.settings['exposure'] = max_exposure
         else:
-            self.exposure = value
+            self.settings['exposure'] = value
 
-        self.send_camera_command('#e('+str(self.exposure)+')')
+        self.send_camera_command('#e('+str(self.settings['exposure'])+')')
 
     def get_max_exposure(self):
         result = self.send_camera_command('#a', True)
@@ -73,19 +84,19 @@ class Camera:
     def set_width_and_height(self, width, height):
         assert ((width%16==0) and (width%24==0)) or (width==1280), 'Frame width must be divisible by 16 and 24 or 1280'
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
-        self.width = width
-        self.height = height
-        self.send_camera_command('#R('+str(self.width)+','+str(self.height)+')')
+        self.settings['width'] = width
+        self.settings['height'] = height
+        self.send_camera_command('#R('+str(width)+','+str(height)+')')
         width_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_WIDTH')
         height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
-        SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, self.height, 0)
-        SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, self.width, 0)
+        SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
+        SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
 
     def set_framerate(self, value):
-        self.framerate = value
+        self.settings['framerate'] = value
         self.send_camera_command('#r('+str(value)+')')
         framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
-        SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, self.framerate, 0)
+        SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, value, 0)
 
     def setup_camera_com(self):
         command = '/opt/SiliconSoftware/Runtime5.7.0/bin/clshell -a -i'
@@ -104,10 +115,10 @@ class Camera:
             return None
 
     def initialise(self):
-        buffer_size = self.width * self.height * 1000
+        buffer_size = self.settings['width'] * self.settings['height'] * 1000
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, 1000)
-        self.display = SISO.CreateDisplay(8, self.width, self.height)
-        SISO.SetBufferWidth(self.display, self.width, self.height)
+        self.display = SISO.CreateDisplay(8, self.settings['width'], self.settings['height'])
+        SISO.SetBufferWidth(self.display, self.settings['width'], self.settings['height'])
 
     def preview(self):
         self.grab()
@@ -127,7 +138,7 @@ class Camera:
     def _get_img(self, index):
         #Get img from index of buffer
         img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, int(index), 0, self.mem_handle)
-        nImg = SISO.getArrayFrom(img_ptr, self.width, self.height)
+        nImg = SISO.getArrayFrom(img_ptr, self.settings['width'], self.settings['height'])
         return gray_to_bgr(nImg)
 
     def display_img(self):
@@ -141,7 +152,7 @@ class Camera:
 
     def trigger(self,numpics=None):
         self.numpics = numpics
-        framerate = self.framerate
+        framerate = self.settings['framerate']
         time.sleep(numpics/framerate)
         self.display_timer.stop()
         self.stop()
@@ -212,7 +223,7 @@ class DisplayTimer(object):
 
 
 if __name__ == '__main__':
-    cam = Camera()
+    cam = Camera('/opt/ConfigFiles/default_settings.json')
     cam.initialise()
     cam.preview()
     # cam.grab()
