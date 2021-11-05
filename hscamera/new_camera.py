@@ -9,6 +9,9 @@ import pexpect
 import time
 
 from threading import Timer
+from labvision.video import WriteVideo
+from labvision.images import gray_to_bgr
+import numpy as np
 
 import cv2
 
@@ -16,6 +19,7 @@ class Camera:
 
     config_dir = '/opt/ConfigFiles/'
     mcf_filename = config_dir + 'current.mcf'
+    filename_base = '/home/ppxjd3/Videos/'
 
     def __init__(self):
 
@@ -36,7 +40,7 @@ class Camera:
         self.height = 1024
         self.set_width_and_height(self.width, self.height)
 
-        self.framerate = 500
+        self.framerate = 30
         self.set_framerate(self.framerate)
 
         self.exposure = 5000
@@ -121,6 +125,12 @@ class Camera:
         self.display_timer = DisplayTimer(0.03, self.display_img)
         self.display_timer.start()
 
+    def _get_img(self, index):
+        #Get img from index of buffer
+        img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, int(index), 0, self.mem_handle)
+        nImg = SISO.getArrayFrom(img_ptr, self.width, self.height)
+        return gray_to_bgr(nImg)
+
     def display_img(self):
         # Displays img in buffer
         cur_pic_nr = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
@@ -147,6 +157,33 @@ class Camera:
             value = SISO.Fg_getParameterWithInt(self.frame_grabber, id, 0)
             print(f, name, id, value)
 
+    def save_vid(self, startframe=None, stopframe=None, ext='.mp4'):
+        print('saving video...')
+        if startframe is None:
+            startframe = 1
+        elif startframe == 0:
+            startframe = 1
+        if stopframe is None:
+            stopframe = self.numpics
+        elif stopframe > self.numpics:
+            stopframe = self.numpics
+            print('changing stopframe to maximum value')
+
+        date_time = self._datetimestr()
+        filename_op = self.filename_base + str(date_time) + ext
+
+        writevid = WriteVideo(filename=filename_op, frame_size=np.shape(self._get_img(1)))
+
+        for frame in range(startframe, stopframe, 1):
+            nImg = self._get_img(frame)
+            writevid.add_frame(nImg)
+        writevid.close()
+        print('Finished writing video')
+
+    def _datetimestr(self):
+        now = time.gmtime()
+        return time.strftime("%Y%m%d_%H%M%S", now)
+
 
 class DisplayTimer(object):
     def __init__(self, interval, startfunction):
@@ -172,7 +209,13 @@ class DisplayTimer(object):
         self._timer.cancel()
         self.is_running = False
 
+
+
+
 if __name__ == '__main__':
     cam = Camera()
     cam.initialise()
-    cam.preview()
+    # cam.preview()
+    cam.grab()
+    cam.trigger(1000)
+    cam.save_vid()
