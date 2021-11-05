@@ -83,9 +83,9 @@ class Camera:
 
     def set_framerate(self, value):
         self.framerate = value
-        self.send_camera_command('#r(100)')
-        # framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
-        # SISO.Fg_setParameterWithUInt(self.frame_grabber, framerate_id, self.framerate, 0)
+        self.send_camera_command('#r('+str(value)+')')
+        framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
+        SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, self.framerate, 0)
 
     def setup_camera_com(self):
         command = '/opt/SiliconSoftware/Runtime5.7.0/bin/clshell -a -i'
@@ -111,12 +111,11 @@ class Camera:
 
     def preview(self):
         self.grab()
-        while True:
-            if cv2.waitKey(0) & 0xFF == ord('q'):
-                break
-        print('out')
-        self.trigger(numpics=0)
+        self.trigger(numpics=1000)
         self.close_display()
+
+    def close_display(self):
+        SISO.CloseDisplay(self.display)
 
     def grab(self):
         self.numpics = SISO.GRAB_INFINITE
@@ -215,7 +214,7 @@ class DisplayTimer(object):
 if __name__ == '__main__':
     cam = Camera()
     cam.initialise()
-    # cam.preview()
-    cam.grab()
-    cam.trigger(1000)
-    cam.save_vid()
+    cam.preview()
+    # cam.grab()
+    # cam.trigger(1000)
+    # cam.save_vid()
