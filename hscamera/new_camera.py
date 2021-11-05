@@ -46,6 +46,8 @@ class Camera:
          # self.print_all_framegrabber_parameters()
         SISO.Fg_loadConfig(self.frame_grabber, self.mcf_filename)
 
+        self.numpics = 1000
+
         self.setup_camera_com()
 
         self.setup_initial_settings()
@@ -119,11 +121,6 @@ class Camera:
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, 1000)
         self.display = SISO.CreateDisplay(8, self.settings['width'], self.settings['height'])
         SISO.SetBufferWidth(self.display, self.settings['width'], self.settings['height'])
-
-    def preview(self):
-        self.grab()
-        self.trigger(numpics=1000)
-        self.close_display()
 
     def close_display(self):
         SISO.CloseDisplay(self.display)
@@ -225,7 +222,6 @@ class DisplayTimer(object):
 if __name__ == '__main__':
     cam = Camera('/opt/ConfigFiles/default_settings.json')
     cam.initialise()
-    cam.preview()
-    # cam.grab()
-    # cam.trigger(1000)
-    # cam.save_vid()
+    cam.grab()
+    cam.trigger(100)
+    cam.save_vid()
