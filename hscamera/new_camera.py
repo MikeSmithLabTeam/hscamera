@@ -87,6 +87,10 @@ class Camera:
         result = self.send_camera_command('#a', True)
         return int(result)  # has a byte before and after the number
 
+    def get_max_framerate(self):
+        result = self.send_camera_command('#A', True)
+        return int(result)
+
     def set_width_and_height(self, width, height):
         assert ((width%16==0) and (width%24==0)) or (width==1280), 'Frame width must be divisible by 16 and 24 or 1280'
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
@@ -97,6 +101,16 @@ class Camera:
         height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
         SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
         SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
+
+    def set_height(self, height):
+        assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
+        self.settings['height'] = height
+        self.send_camera_command('#R(+'+str(self.settings['width'])+','+str(height)+')')
+
+    def set_width(self, width):
+        assert (width % 16 == 0), 'Frame height must be divisible by 2 and at most 1024'
+        self.settings['width'] = width
+        self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
 
     def set_framerate(self, value):
         self.settings['framerate'] = value
