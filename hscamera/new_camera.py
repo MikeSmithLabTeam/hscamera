@@ -34,7 +34,7 @@ class Camera:
     mcf_filename = config_dir + 'current.mcf'
     filename_base = '/home/ppxjd3/Videos/'
 
-    def __init__(self, settings_file=None):
+    def __init__(self, settings_file=None, window=True):
         if settings_file is None:
             self.settings = default_settings
         else:
@@ -51,6 +51,10 @@ class Camera:
         self.setup_camera_com()
 
         self.setup_initial_settings()
+
+        self.initialise_buffer()
+        if window:
+            self.initialise_window()
 
     def setup_initial_settings(self):
         self.set_gain(self.settings['gain'])
@@ -116,25 +120,45 @@ class Camera:
             result = self.camera_com.readline()
             return None
 
-    def initialise(self):
+    def initialise_buffer(self):
         buffer_size = self.settings['width'] * self.settings['height'] * 1000
+        # Reserves an aera of the main memory as frame buffer, blocks it and makes it available for the user
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, 1000)
+
+    def initialise_window(self):
+        # Creates a display window
         self.display = SISO.CreateDisplay(8, self.settings['width'], self.settings['height'])
-        SISO.SetBufferWidth(self.display, self.settings['width'], self.settings['height'])
+        # Configures the size of the frame buffer, allowing a window smaller than the frame buffer?
+        SISO.SetBufferWidth(0, self.settings['width'], self.settings['height'])
 
     def close_display(self):
         SISO.CloseDisplay(self.display)
 
     def grab(self):
-        self.numpics = SISO.GRAB_INFINITE
-        err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
-
+        self.start()
         self.display_timer = DisplayTimer(0.03, self.display_img)
         self.display_timer.start()
 
-    def _get_img(self, index):
+    def start(self):
+        self.numpic = SISO.GRAB_INFINITE
+        # Starts continuous grabbing in background.
+        err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
+
+    def grab_external_timed(self, func):
+        def internal_func():
+            cur_pic_nr = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
+            img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, cur_pic_nr, 0, self.mem_handle)
+            img = SISO.getArrayFrom(img_ptr, self.settings['width'], self.settings['height'])
+            func(img)
+        self.display_timer = DisplayTimer(0.03, internal_func)
+        self.display_timer.start()
+
+    def _get_img(self, index=None):
+        if index is None:
+            # The number of the last, completely transferred image
+            index = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
         #Get img from index of buffer
-        img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, int(index), 0, self.mem_handle)
+        img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
         nImg = SISO.getArrayFrom(img_ptr, self.settings['width'], self.settings['height'])
         return gray_to_bgr(nImg)
 
@@ -221,7 +245,6 @@ class DisplayTimer(object):
 
 if __name__ == '__main__':
     cam = Camera('/opt/ConfigFiles/default_settings.json')
-    cam.initialise()
     cam.grab()
     cam.trigger(100)
-    cam.save_vid()
+    # cam.save_vid()
