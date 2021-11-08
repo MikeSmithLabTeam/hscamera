@@ -20,7 +20,8 @@ default_settings = {
     'height': 1024,
     'framerate': 30,
     'exposure': 5000,
-    'fpn_correction': 1
+    'fpn_correction': 1,
+    'blacklevel': 100
 }
 
 with open('/opt/ConfigFiles/default_settings.json', 'w') as f:
@@ -62,6 +63,12 @@ class Camera:
         self.set_width_and_height(self.settings['width'], self.settings['height'])
         self.set_framerate(self.settings['framerate'])
         self.set_exposure(self.settings['exposure'])
+        self.set_blacklevel(self.settings['blacklevel'])
+
+    def set_blacklevel(self, value):
+        assert (value >= 0) and (value <=255), 'Blacklevel must be between 0 and 255'
+        self.settings['blacklevel'] = value
+        self.send_camera_command('#z('+str(value)+')')
 
     def set_fpn_correction(self, value):
         assert value in [0, 1], 'Value must be 0 or 1'
@@ -157,15 +164,6 @@ class Camera:
         self.numpic = SISO.GRAB_INFINITE
         # Starts continuous grabbing in background.
         err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
-
-    def grab_external_timed(self, func):
-        def internal_func():
-            cur_pic_nr = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
-            img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, cur_pic_nr, 0, self.mem_handle)
-            img = SISO.getArrayFrom(img_ptr, self.settings['width'], self.settings['height'])
-            func(img)
-        self.display_timer = DisplayTimer(0.03, internal_func)
-        self.display_timer.start()
 
     def _get_img(self, index=None):
         if index is None:

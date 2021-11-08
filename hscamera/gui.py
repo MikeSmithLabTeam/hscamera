@@ -54,6 +54,10 @@ class MainWindow(QMainWindow):
         self.fpn_correct_slider.valueChanged.connect(self.cam.set_fpn_correction)
         tool_layout.addWidget(self.fpn_correct_slider)
 
+        self.blacklevel_slider = qtwidgets.QCustomSlider(self, 'Blacklevel', 0, 255, 1, value_=self.cam.settings['blacklevel'], label=True)
+        self.blacklevel_slider.valueChanged.connect(self.cam.set_blacklevel)
+        tool_layout.addWidget(self.blacklevel_slider)
+
         self.height_slider = qtwidgets.QCustomSlider(self, 'Height', 0, 1024, 2, value_=self.cam.settings['height'], label=True)
         self.height_slider.valueChanged.connect(self.cam.set_height)
         self.height_slider.valueChanged.connect(self.update_slider_ranges)
