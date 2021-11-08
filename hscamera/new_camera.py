@@ -42,6 +42,7 @@ class Camera:
             with open(settings_file, 'r') as f:
                 self.settings = json.load(f)
 
+        self.ready = False
         # Not Really sure why I have both of these lines
         self.frame_grabber = SISO.Fg_InitConfig(self.mcf_filename, 0)
          # self.print_all_framegrabber_parameters()
@@ -54,6 +55,10 @@ class Camera:
         self.setup_initial_settings()
 
         self.initialise_buffer()
+
+        self.ready = True
+
+
         if window:
             self.initialise_window()
 
@@ -78,7 +83,8 @@ class Camera:
     def set_gain(self, value):
         assert value in [1, 1.5, 2, 2.25, 3, 4], 'Value must be in [1, 1.5, 2, 2.25, 3, 4]'
         self.settings['gain'] = value
-        self.send_camera_command('#G('+str(value)+')')
+        command = '#G('+str(value)+')'
+        self.send_camera_command(command)
 
     def set_exposure(self, value):
         max_exposure = self.get_max_exposure()
@@ -113,17 +119,26 @@ class Camera:
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['height'] = height
         self.send_camera_command('#R(+'+str(self.settings['width'])+','+str(height)+')')
+        self.stop()
+        height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
+        SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
+        self.start()
 
     def set_width(self, width):
         assert (width % 16 == 0), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['width'] = width
         self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
+        self.stop()
+        width_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_WIDTH')
+        SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
+        self.start()
 
     def set_framerate(self, value):
         self.settings['framerate'] = value
         self.send_camera_command('#r('+str(value)+')')
-        framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
-        SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, value, 0)
+        # These lines are not needed as the framegrabber is in FREE_RUN mode so framerate and exposure are set by the camera
+        # framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
+        # SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, value, 0)
 
     def setup_camera_com(self):
         command = '/opt/SiliconSoftware/Runtime5.7.0/bin/clshell -a -i'
@@ -135,8 +150,11 @@ class Camera:
         self.camera_com.sendline(command.encode())
         input_line = self.camera_com.readline()
         if expect_return_value:
-            result = self.camera_com.readline()
-            return result[1:-4]
+            result = self.camera_com.readline().decode().strip()
+            if result[0] == '>':
+                return result[1:-1]
+            else:
+                return result[:-1]
         else:
             result = self.camera_com.readline()
             return None
