@@ -8,7 +8,6 @@ import pexpect
 
 import time
 
-from threading import Timer
 from labvision.video import WriteVideo
 from labvision.images import gray_to_bgr, load
 import numpy as np
@@ -199,7 +198,6 @@ class Camera:
         SISO.Fg_FreeMemEx(self.frame_grabber, self.mem_handle)
 
     def save_vid(self, filename=None):
-        startframe = 1
         date_time = self._datetimestr()
         if filename is None:
             filename = self.filename_base + str(date_time) + '.MP4'

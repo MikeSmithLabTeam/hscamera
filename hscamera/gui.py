@@ -61,6 +61,9 @@ class MainWindow(QMainWindow):
     def record_button_pressed(self):
         seconds = self.seconds_slider.value()
         images = seconds * self.framerate_slider.value()
+
+        self.lock_options()
+
         self.progress_bar.show()
         self.progress_bar.setRange(0, seconds)
         self.progress_bar.setValue(0)
@@ -78,6 +81,28 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.finish_recording)
         self.thread.start()
 
+    def lock_options(self):
+        self.exposure_slider.setEnabled(False)
+        self.gain_slider.setEnabled(False)
+        self.fpn_correct_slider.setEnabled(False)
+        self.blacklevel_slider.setEnabled(False)
+        self.width_slider.setEnabled(False)
+        self.height_slider.setEnabled(False)
+        self.framerate_slider.setEnabled(False)
+        self.seconds_slider.setEnabled(False)
+        self.record_button.setEnabled(False)
+
+    def unlock_options(self):
+        self.exposure_slider.setEnabled(True)
+        self.gain_slider.setEnabled(True)
+        self.fpn_correct_slider.setEnabled(True)
+        self.blacklevel_slider.setEnabled(True)
+        self.width_slider.setEnabled(True)
+        self.height_slider.setEnabled(True)
+        self.framerate_slider.setEnabled(True)
+        self.seconds_slider.setEnabled(True)
+        self.record_button.setEnabled(True)
+
     def update_recording_time(self, i):
         self.progress_bar.setValue(i)
         # print("Elapsed time : {} s".format(i))
@@ -86,6 +111,7 @@ class MainWindow(QMainWindow):
         self.cam.stop()
         self.cam.save_vid()
         self.progress_bar.hide()
+        self.unlock_options()
         print("Finished recording")
 
 
