@@ -168,8 +168,10 @@ class Camera:
     def start(self, numpics=None):
         if self.started:
             self.stop()
+            self.clear_buffer()
         if numpics is None:
             numpics = SISO.GRAB_INFINITE
+            self.initialise_buffer(1000)
         else:
             self.initialise_buffer(numpics)
 
