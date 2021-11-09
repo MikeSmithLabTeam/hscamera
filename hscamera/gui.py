@@ -24,6 +24,8 @@ class MainWindow(QMainWindow):
 
         self.seconds = 10
 
+        app.aboutToQuit.connect(self.quit)
+
     def update_image(self):
         im = self.cam.get_current_img()
         self.image_viewer.setImage(im)
@@ -150,6 +152,11 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
         self.resize(1024, 720)
+
+    def quit(self):
+        print("Cleaning up before quitting")
+        self.cam.stop()
+        self.cam.clear_buffer()
 
 
 class RecordWorker(QObject):

@@ -65,7 +65,8 @@ class Camera:
     def setup_initial_settings(self):
         self.set_gain(self.settings['gain'])
         self.set_fpn_correction(self.settings['fpn_correction'])
-        self.set_width_and_height(self.settings['width'], self.settings['height'])
+        self.set_width(self.settings['width'])
+        self.set_height(self.settings['height'])
         self.set_framerate(self.settings['framerate'])
         self.set_exposure(self.settings['exposure'])
         self.set_blacklevel(self.settings['blacklevel'])
@@ -104,34 +105,27 @@ class Camera:
         result = self.send_camera_command('#A', True)
         return int(result)
 
-    def set_width_and_height(self, width, height):
-        assert ((width%16==0) and (width%24==0)) or (width==1280), 'Frame width must be divisible by 16 and 24 or 1280'
-        assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
-        self.settings['width'] = width
-        self.settings['height'] = height
-        self.send_camera_command('#R('+str(width)+','+str(height)+')')
-        width_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_WIDTH')
-        height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
-        SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
-        SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
-
     def set_height(self, height):
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['height'] = height
         self.send_camera_command('#R(+'+str(self.settings['width'])+','+str(height)+')')
-        self.stop()
+        if self.started:
+            self.stop()
         height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
         SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
-        self.start()
+        if self.ready:
+            self.start()
 
     def set_width(self, width):
         assert (width % 16 == 0), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['width'] = width
         self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
-        self.stop()
+        if self.started:
+            self.stop()
         width_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_WIDTH')
         SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
-        self.start()
+        if self.ready:
+            self.start()
 
     def set_framerate(self, value):
         self.settings['framerate'] = value
@@ -195,19 +189,12 @@ class Camera:
         im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
         return gray_to_bgr(im)
 
-
-    def display_img(self):
-        # Displays img in buffer
-        cur_pic_nr = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
-        win_name_img = "Source Image (SiSo Runtime)"
-        # get image pointer
-        img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, cur_pic_nr, 0, self.mem_handle)
-        SISO.DrawBuffer(self.display, img_ptr, cur_pic_nr, win_name_img)
-        return cur_pic_nr
-
     def stop(self):
         SISO.Fg_stopAcquire(self.frame_grabber, 0)
         self.started = False
+
+    def clear_buffer(self):
+        SISO.Fg_FreeMemEx(self.frame_grabber, self.mem_handle)
 
     def save_vid(self, filename=None):
         startframe = 1
@@ -222,6 +209,7 @@ class Camera:
             writevid.add_frame(nImg)
         writevid.close()
         print('Finished writing video')
+        self.clear_buffer()
         self.start()
 
     def _datetimestr(self):
