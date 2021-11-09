@@ -10,7 +10,7 @@ import time
 
 from threading import Timer
 from labvision.video import WriteVideo
-from labvision.images import gray_to_bgr
+from labvision.images import gray_to_bgr, load
 import numpy as np
 import json
 
@@ -19,7 +19,7 @@ default_settings = {
     'width': 1280,
     'height': 1024,
     'framerate': 30,
-    'exposure': 5000,
+    'exposure': 15000,
     'fpn_correction': 1,
     'blacklevel': 100
 }
@@ -43,12 +43,12 @@ class Camera:
                 self.settings = json.load(f)
 
         self.ready = False
+        self.started = False
+        self.no_image = load('no_image.jpg')
         # Not Really sure why I have both of these lines
         self.frame_grabber = SISO.Fg_InitConfig(self.mcf_filename, 0)
          # self.print_all_framegrabber_parameters()
         SISO.Fg_loadConfig(self.frame_grabber, self.mcf_filename)
-
-        self.numpics = 1000
 
         self.setup_camera_com()
 
@@ -156,10 +156,10 @@ class Camera:
             result = self.camera_com.readline()
             return None
 
-    def initialise_buffer(self):
-        buffer_size = self.settings['width'] * self.settings['height'] * 1000
+    def initialise_buffer(self, numpics=1000):
+        buffer_size = self.settings['width'] * self.settings['height'] * numpics
         # Reserves an aera of the main memory as frame buffer, blocks it and makes it available for the user
-        self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, 1000)
+        self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, numpics)
 
     def initialise_window(self):
         # Creates a display window
@@ -170,16 +170,27 @@ class Camera:
     def close_display(self):
         SISO.CloseDisplay(self.display)
 
-    def start(self):
-        self.numpics = SISO.GRAB_INFINITE
+    def start(self, numpics=None):
+        if self.started:
+            self.stop()
+        if numpics is None:
+            numpics = SISO.GRAB_INFINITE
+        else:
+            self.initialise_buffer(numpics)
+
         # Starts continuous grabbing in background.
-        err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
+        err = SISO.Fg_AcquireEx(self.frame_grabber, 0, numpics, SISO.ACQ_STANDARD, self.mem_handle)
+        self.started = True
 
     def get_current_img(self):
         index = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
-        ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
-        im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
-        return gray_to_bgr(im)
+        if index == 0:  # no picture in buffer yet
+            return self.no_image
+        else:
+            ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
+            im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
+            return gray_to_bgr(im)
+
 
     def display_img(self):
         # Displays img in buffer
@@ -192,6 +203,7 @@ class Camera:
 
     def stop(self):
         SISO.Fg_stopAcquire(self.frame_grabber, 0)
+        self.started = False
 
     def save_vid(self, startframe=None, stopframe=None, ext='.mp4'):
         print('saving video...')
