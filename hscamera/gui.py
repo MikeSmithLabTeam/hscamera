@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar
+from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtCore import QTimer, QThread, QObject
 import qtwidgets
@@ -61,24 +61,33 @@ class MainWindow(QMainWindow):
     def record_button_pressed(self):
         seconds = self.seconds_slider.value()
         images = seconds * self.framerate_slider.value()
+        self.images = images
 
         self.lock_options()
 
         self.progress_bar.show()
         self.progress_bar.setRange(0, seconds)
         self.progress_bar.setValue(0)
+        self.status_bar.showMessage('Recording...')
         print("Record {} images".format(images))
         self.cam.start(images)
         self.thread = QThread(self)
+
         self.worker = RecordWorker()
         self.worker.seconds = seconds
+        self.worker.filename = None
+        self.worker.cam = self.cam
+
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
+
+        self.worker.recorded.connect(self.finish_recording)
+
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.progress.connect(self.update_recording_time)
-        self.worker.finished.connect(self.finish_recording)
+        self.worker.progress.connect(self.progress_bar.setValue)
+        self.worker.finished.connect(self.finish_saving)
         self.thread.start()
 
     def lock_options(self):
@@ -103,16 +112,16 @@ class MainWindow(QMainWindow):
         self.seconds_slider.setEnabled(True)
         self.record_button.setEnabled(True)
 
-    def update_recording_time(self, i):
-        self.progress_bar.setValue(i)
-        # print("Elapsed time : {} s".format(i))
-
     def finish_recording(self):
         self.cam.stop()
-        self.cam.save_vid()
+        self.status_bar.showMessage('Saving Video ...')
+        self.progress_bar.setValue(0)
+        self.progress_bar.setMaximum(self.images)
+
+    def finish_saving(self):
         self.progress_bar.hide()
         self.unlock_options()
-        print("Finished recording")
+        self.status_bar.showMessage('Ready')
 
 
     def seconds_slider_changed(self, val):
@@ -132,6 +141,10 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.progress_bar.hide()
         layout.addWidget(self.progress_bar)
+
+        self.status_bar = QStatusBar()
+        self.status_bar.showMessage('Ready')
+        self.setStatusBar(self.status_bar)
 
         hlayout.addWidget(self.image_viewer)
 
@@ -186,6 +199,7 @@ class MainWindow(QMainWindow):
 
 
 class RecordWorker(QObject):
+    recorded = pyqtSignal()
     finished = pyqtSignal()
     progress = pyqtSignal(int)
 
@@ -193,7 +207,12 @@ class RecordWorker(QObject):
         for i in range(self.seconds):
             time.sleep(1)
             self.progress.emit(i+1)
+        self.recorded.emit()
+        self.cam.save_vid(self.filename, self.update_progress)
         self.finished.emit()
+
+    def update_progress(self, i):
+        self.progress.emit(i)
 
 
 if __name__ == '__main__':

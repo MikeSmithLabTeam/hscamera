@@ -197,7 +197,7 @@ class Camera:
     def clear_buffer(self):
         SISO.Fg_FreeMemEx(self.frame_grabber, self.mem_handle)
 
-    def save_vid(self, filename=None):
+    def save_vid(self, filename=None, signal=None):
         date_time = self._datetimestr()
         if filename is None:
             filename = self.filename_base + str(date_time) + '.MP4'
@@ -205,11 +205,12 @@ class Camera:
         writevid = WriteVideo(filename=filename, frame_size=np.shape(self.get_current_img()))
 
         for frame in range(1, self.numpics, 1):
+            if signal is not None:
+                signal(frame)
             nImg = self.get_img(frame)
             writevid.add_frame(nImg)
         writevid.close()
-        print('Finished writing video')
-        self.clear_buffer()
+        # self.clear_buffer()
         self.start()
 
     def _datetimestr(self):
