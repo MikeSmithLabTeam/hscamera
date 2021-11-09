@@ -37,12 +37,12 @@ class MainWindow(QMainWindow):
 
     def update_x_max(self, val):
         old_val = self.x_slider.value()
-        self.x_slider.changeSettings(0, 1024-val, 1, old_val)
+        self.x_slider.changeSettings(0, 1024-val, 16, old_val)
         self.x_slider.setEnabled(val != 1024)
 
     def update_y_max(self, val):
         old_val = self.y_slider.value()
-        self.y_slider.changeSettings(0, 1024-val, 1, old_val)
+        self.y_slider.changeSettings(0, 1024-val, 2, old_val)
         self.y_slider.setEnabled(val != 1024)
 
     def height_changed(self, val):
@@ -171,36 +171,44 @@ class MainWindow(QMainWindow):
 
         self.exposure_slider = qtwidgets.QCustomSlider(self, 'Exposure', 1, self.cam.get_max_exposure(), 1, value_=self.cam.settings['exposure'], label=True)
         self.exposure_slider.valueChanged.connect(self.cam.set_exposure)
+        self.exposure_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.exposure_slider)
 
         self.gain_slider = qtwidgets.QCustomSlider(self, 'Gain', 1, 4, 1, value_=self.cam.settings['gain'], label=True)
         self.gain_slider.valueChanged.connect(self.cam.set_gain)
+        self.gain_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.gain_slider)
 
         self.fpn_correct_slider = qtwidgets.QCustomSlider(self, 'FPN correction', 0, 1, 1, value_=self.cam.settings['fpn_correction'], label=True)
         self.fpn_correct_slider.valueChanged.connect(self.cam.set_fpn_correction)
+        self.fpn_correct_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.fpn_correct_slider)
 
         self.blacklevel_slider = qtwidgets.QCustomSlider(self, 'Blacklevel', 0, 255, 1, value_=self.cam.settings['blacklevel'], label=True)
         self.blacklevel_slider.valueChanged.connect(self.cam.set_blacklevel)
+        self.blacklevel_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.blacklevel_slider)
 
-        self.height_slider = qtwidgets.QCustomSlider(self, 'Height', 0, 1024, 2, value_=self.cam.settings['height'], label=True)
+        self.height_slider = qtwidgets.QCustomSlider(self, 'Height', 2, 1024, 2, value_=self.cam.settings['height'], label=True)
         self.height_slider.valueChanged.connect(self.height_changed)
+        self.height_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.height_slider)
 
-        self.width_slider = qtwidgets.QCustomSlider(self, 'Width', 0, 1024, 16, value_=self.cam.settings['width'], label=True)
+        self.width_slider = qtwidgets.QCustomSlider(self, 'Width', 16, 1024, 16, value_=self.cam.settings['width'], label=True)
         self.width_slider.valueChanged.connect(self.width_changed)
+        self.width_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.width_slider)
 
-        self.x_slider = qtwidgets.QCustomSlider(self, 'x start', 0, 0, 1, value_=self.cam.settings['x'], label=True)
+        self.x_slider = qtwidgets.QCustomSlider(self, 'x start', 0, 0, 16, value_=self.cam.settings['x'], label=True)
         self.x_slider.valueChanged.connect(self.x_changed)
+        self.x_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.x_slider)
         if self.cam.settings['width'] == 1024:
             self.x_slider.setEnabled(False)
 
-        self.y_slider = qtwidgets.QCustomSlider(self, 'y start', 0, 0, 1, value_=self.cam.settings['y'], label=True)
+        self.y_slider = qtwidgets.QCustomSlider(self, 'y start', 0, 0, 2, value_=self.cam.settings['y'], label=True)
         self.y_slider.valueChanged.connect(self.y_changed)
+        self.y_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.y_slider)
         if self.cam.settings['height'] == 1024:
             self.y_slider.setEnabled(False)
@@ -208,6 +216,7 @@ class MainWindow(QMainWindow):
 
         self.framerate_slider = qtwidgets.QCustomSlider(self, 'Framerate', 20, self.cam.get_max_framerate(), 1, value_=self.cam.settings['framerate'], label=True)
         self.framerate_slider.valueChanged.connect(self.framerate_changed)
+        self.framerate_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.framerate_slider)
 
         self.seconds_slider = qtwidgets.QCustomSlider(self, 'Record Time (s)', 1, 30, 1, value_=10, label=True)

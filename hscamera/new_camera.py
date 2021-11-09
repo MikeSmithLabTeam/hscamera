@@ -120,7 +120,7 @@ class Camera:
             self.start()
 
     def set_width(self, width):
-        assert (width % 16 == 0), 'Frame height must be divisible by 2 and at most 1024'
+        assert (width % 16 == 0) and (width <= 1024), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['width'] = width
         self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
 
