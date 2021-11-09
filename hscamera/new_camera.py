@@ -32,7 +32,7 @@ with open('/opt/ConfigFiles/default_settings.json', 'w') as f:
 class Camera:
 
     config_dir = '/opt/ConfigFiles/'
-    mcf_filename = config_dir + 'current.mcf'
+    mcf_filename = config_dir + 'current.mcf' # If this file doesn't exist make it using microDisplayX
     filename_base = '/home/ppxjd3/Videos/'
 
     def __init__(self, settings_file=None, window=True):
@@ -136,9 +136,6 @@ class Camera:
     def set_framerate(self, value):
         self.settings['framerate'] = value
         self.send_camera_command('#r('+str(value)+')')
-        # These lines are not needed as the framegrabber is in FREE_RUN mode so framerate and exposure are set by the camera
-        # framerate_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_FRAMESPERSEC')
-        # SISO.Fg_setParameterWithDouble(self.frame_grabber, framerate_id, value, 0)
 
     def setup_camera_com(self):
         command = '/opt/SiliconSoftware/Runtime5.7.0/bin/clshell -a -i'
@@ -173,13 +170,8 @@ class Camera:
     def close_display(self):
         SISO.CloseDisplay(self.display)
 
-    def grab(self):
-        self.start()
-        self.display_timer = DisplayTimer(0.03, self.display_img)
-        self.display_timer.start()
-
     def start(self):
-        self.numpic = SISO.GRAB_INFINITE
+        self.numpics = SISO.GRAB_INFINITE
         # Starts continuous grabbing in background.
         err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
 
@@ -201,22 +193,8 @@ class Camera:
         SISO.DrawBuffer(self.display, img_ptr, cur_pic_nr, win_name_img)
         return cur_pic_nr
 
-    def trigger(self,numpics=None):
-        self.numpics = numpics
-        framerate = self.settings['framerate']
-        time.sleep(numpics/framerate)
-        self.display_timer.stop()
-        self.stop()
-
     def stop(self):
         SISO.Fg_stopAcquire(self.frame_grabber, 0)
-
-    def print_all_framegrabber_parameters(self):
-        for f in range(86):
-            name = SISO.Fg_getParameterName(self.frame_grabber, f)
-            id = SISO.Fg_getParameterIdByName(self.frame_grabber, name)
-            value = SISO.Fg_getParameterWithInt(self.frame_grabber, id, 0)
-            print(f, name, id, value)
 
     def save_vid(self, startframe=None, stopframe=None, ext='.mp4'):
         print('saving video...')
@@ -246,35 +224,8 @@ class Camera:
         return time.strftime("%Y%m%d_%H%M%S", now)
 
 
-class DisplayTimer(object):
-    def __init__(self, interval, startfunction):
-        self._timer = None
-        self.interval = interval
-        self.startfunction = startfunction
-        # self.stopfunction = stopfunction
-        self.is_running = False
-        self.start()
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-
-    def start(self):
-        self.startfunction()
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
-
-
-
 
 if __name__ == '__main__':
     cam = Camera('/opt/ConfigFiles/default_settings.json')
     cam.grab()
     cam.trigger(100)
-    # cam.save_vid()

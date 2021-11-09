@@ -9,6 +9,7 @@ import numpy as np
 from new_camera import Camera
 
 
+
 class MainWindow(QMainWindow):
 
     def __init__(self):
