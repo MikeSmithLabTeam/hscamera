@@ -157,6 +157,7 @@ class Camera:
             return None
 
     def initialise_buffer(self, numpics=1000):
+        self.numpics = numpics
         buffer_size = self.settings['width'] * self.settings['height'] * numpics
         # Reserves an aera of the main memory as frame buffer, blocks it and makes it available for the user
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, numpics)
@@ -187,9 +188,12 @@ class Camera:
         if index == 0:  # no picture in buffer yet
             return self.no_image
         else:
-            ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
-            im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
-            return gray_to_bgr(im)
+            return self.get_img(index)
+
+    def get_img(self, index):
+        ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
+        im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
+        return gray_to_bgr(im)
 
 
     def display_img(self):
@@ -205,28 +209,20 @@ class Camera:
         SISO.Fg_stopAcquire(self.frame_grabber, 0)
         self.started = False
 
-    def save_vid(self, startframe=None, stopframe=None, ext='.mp4'):
-        print('saving video...')
-        if startframe is None:
-            startframe = 1
-        elif startframe == 0:
-            startframe = 1
-        if stopframe is None:
-            stopframe = self.numpics
-        elif stopframe > self.numpics:
-            stopframe = self.numpics
-            print('changing stopframe to maximum value')
-
+    def save_vid(self, filename=None):
+        startframe = 1
         date_time = self._datetimestr()
-        filename_op = self.filename_base + str(date_time) + ext
+        if filename is None:
+            filename = self.filename_base + str(date_time) + '.MP4'
 
-        writevid = WriteVideo(filename=filename_op, frame_size=np.shape(self._get_img(1)))
+        writevid = WriteVideo(filename=filename, frame_size=np.shape(self.get_current_img()))
 
-        for frame in range(startframe, stopframe, 1):
-            nImg = self._get_img(frame)
+        for frame in range(1, self.numpics, 1):
+            nImg = self.get_img(frame)
             writevid.add_frame(nImg)
         writevid.close()
         print('Finished writing video')
+        self.start()
 
     def _datetimestr(self):
         now = time.gmtime()

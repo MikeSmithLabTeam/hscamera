@@ -1,6 +1,6 @@
 import time
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox
+from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtCore import QTimer, QThread, QObject
 import qtwidgets
@@ -59,6 +59,9 @@ class MainWindow(QMainWindow):
     def record_button_pressed(self):
         seconds = self.seconds_slider.value()
         images = seconds * self.framerate_slider.value()
+        self.progress_bar.show()
+        self.progress_bar.setRange(0, seconds)
+        self.progress_bar.setValue(0)
         print("Record {} images".format(images))
         self.cam.start(images)
         self.thread = QThread(self)
@@ -74,10 +77,13 @@ class MainWindow(QMainWindow):
         self.thread.start()
 
     def update_recording_time(self, i):
-        print("Elapsed time : {} s".format(i))
+        self.progress_bar.setValue(i)
+        # print("Elapsed time : {} s".format(i))
 
     def finish_recording(self):
         self.cam.stop()
+        self.cam.save_vid()
+        self.progress_bar.hide()
         print("Finished recording")
 
 
@@ -90,11 +96,19 @@ class MainWindow(QMainWindow):
         im = self.cam.get_current_img()
         self.image_viewer.setImage(im)
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.image_viewer)
+        layout = QVBoxLayout()
+        hlayout = QHBoxLayout()
+        layout.addLayout(hlayout)
+
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setValue(0)
+        self.progress_bar.hide()
+        layout.addWidget(self.progress_bar)
+
+        hlayout.addWidget(self.image_viewer)
 
         tool_layout = QVBoxLayout()
-        layout.addLayout(tool_layout, 0.3)
+        hlayout.addLayout(tool_layout, 0.3)
 
         self.exposure_slider = qtwidgets.QCustomSlider(self, 'Exposure', 1, self.cam.get_max_exposure(), 1, value_=self.cam.settings['exposure'], label=True)
         self.exposure_slider.valueChanged.connect(self.cam.set_exposure)
@@ -145,7 +159,7 @@ class RecordWorker(QObject):
     def run(self):
         for i in range(self.seconds):
             time.sleep(1)
-            self.progress.emit(i + 1)
+            self.progress.emit(i+1)
         self.finished.emit()
 
 
