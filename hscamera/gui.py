@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
         self.framerate_slider.valueChanged.connect(self.framerate_changed)
         tool_layout.addWidget(self.framerate_slider)
 
-        self.seconds_slider = qtwidgets.QCustomSlider(self, 'Record Time (s)', 1, 1000, 1, value_=10, label=True)
+        self.seconds_slider = qtwidgets.QCustomSlider(self, 'Record Time (s)', 1, 30, 1, value_=10, label=True)
         self.seconds_slider.valueChanged.connect(self.seconds_slider_changed)
         tool_layout.addWidget(self.seconds_slider)
 
