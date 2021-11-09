@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
         self.width_slider.valueChanged.connect(self.width_changed)
         tool_layout.addWidget(self.width_slider)
 
-        self.framerate_slider = qtwidgets.QCustomSlider(self, 'Framerate', 10, self.cam.get_max_framerate(), 1, value_=self.cam.settings['framerate'], label=True)
+        self.framerate_slider = qtwidgets.QCustomSlider(self, 'Framerate', 20, self.cam.get_max_framerate(), 1, value_=self.cam.settings['framerate'], label=True)
         self.framerate_slider.valueChanged.connect(self.framerate_changed)
         tool_layout.addWidget(self.framerate_slider)
 
