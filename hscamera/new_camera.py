@@ -219,10 +219,3 @@ class Camera:
     def _datetimestr(self):
         now = time.gmtime()
         return time.strftime("%Y%m%d_%H%M%S", now)
-
-
-
-if __name__ == '__main__':
-    cam = Camera('/opt/ConfigFiles/default_settings.json')
-    cam.grab()
-    cam.trigger(100)
