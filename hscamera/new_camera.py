@@ -15,12 +15,14 @@ import json
 
 default_settings = {
     'gain': 2,
-    'width': 1280,
+    'width': 1024,
     'height': 1024,
     'framerate': 30,
     'exposure': 15000,
     'fpn_correction': 1,
-    'blacklevel': 100
+    'blacklevel': 100,
+    'x': 0,
+    'y': 0
 }
 
 with open('/opt/ConfigFiles/default_settings.json', 'w') as f:
@@ -69,6 +71,8 @@ class Camera:
         self.set_framerate(self.settings['framerate'])
         self.set_exposure(self.settings['exposure'])
         self.set_blacklevel(self.settings['blacklevel'])
+        self.set_x(self.settings['x'])
+        self.set_y(self.settings['y'])
 
     def set_blacklevel(self, value):
         assert (value >= 0) and (value <=255), 'Blacklevel must be between 0 and 255'
@@ -119,12 +123,20 @@ class Camera:
         assert (width % 16 == 0), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['width'] = width
         self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
-        if self.started:
-            self.stop()
-        width_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_WIDTH')
-        SISO.Fg_setParameterWithInt(self.frame_grabber, width_id, width, 0)
-        if self.ready:
-            self.start()
+
+    def set_x(self, x):
+        self.settings['x'] = x
+        self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
+
+    def set_y(self, y):
+        self.settings['y'] = y
+        self.send_camera_command(
+            '#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'],
+                                     self.settings['height']))
+        if self.started: self.stop()
+        y_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_YOFFSET')
+        SISO.Fg_setParameterWithInt(self.frame_grabber, y_id, y, 0)
+        if self.ready: self.start()
 
     def set_framerate(self, value):
         self.settings['framerate'] = value

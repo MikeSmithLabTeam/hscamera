@@ -33,10 +33,28 @@ class MainWindow(QMainWindow):
     def width_changed(self, val):
         self.cam.set_width(val)
         self.update_max_framerate()
+        self.update_x_max(val)
+
+    def update_x_max(self, val):
+        old_val = self.x_slider.value()
+        self.x_slider.changeSettings(0, 1024-val, 1, old_val)
+        self.x_slider.setEnabled(val != 1024)
+
+    def update_y_max(self, val):
+        old_val = self.y_slider.value()
+        self.y_slider.changeSettings(0, 1024-val, 1, old_val)
+        self.y_slider.setEnabled(val != 1024)
 
     def height_changed(self, val):
         self.cam.set_height(val)
         self.update_max_framerate()
+        self.update_y_max(val)
+
+    def x_changed(self, val):
+        self.cam.set_x(val)
+
+    def y_changed(self, val):
+        self.cam.set_y(val)
 
     def framerate_changed(self, val):
         self.cam.set_framerate(val)
@@ -174,6 +192,19 @@ class MainWindow(QMainWindow):
         self.width_slider = qtwidgets.QCustomSlider(self, 'Width', 0, 1024, 16, value_=self.cam.settings['width'], label=True)
         self.width_slider.valueChanged.connect(self.width_changed)
         tool_layout.addWidget(self.width_slider)
+
+        self.x_slider = qtwidgets.QCustomSlider(self, 'x start', 0, 0, 1, value_=self.cam.settings['x'], label=True)
+        self.x_slider.valueChanged.connect(self.x_changed)
+        tool_layout.addWidget(self.x_slider)
+        if self.cam.settings['width'] == 1024:
+            self.x_slider.setEnabled(False)
+
+        self.y_slider = qtwidgets.QCustomSlider(self, 'y start', 0, 0, 1, value_=self.cam.settings['y'], label=True)
+        self.y_slider.valueChanged.connect(self.y_changed)
+        tool_layout.addWidget(self.y_slider)
+        if self.cam.settings['height'] == 1024:
+            self.y_slider.setEnabled(False)
+
 
         self.framerate_slider = qtwidgets.QCustomSlider(self, 'Framerate', 20, self.cam.get_max_framerate(), 1, value_=self.cam.settings['framerate'], label=True)
         self.framerate_slider.valueChanged.connect(self.framerate_changed)
