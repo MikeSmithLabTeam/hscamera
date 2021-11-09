@@ -115,6 +115,8 @@ class MainWindow(QMainWindow):
         self.blacklevel_slider.setEnabled(False)
         self.width_slider.setEnabled(False)
         self.height_slider.setEnabled(False)
+        self.x_slider.setEnabled(False)
+        self.y_slider.setEnabled(False)
         self.framerate_slider.setEnabled(False)
         self.seconds_slider.setEnabled(False)
         self.record_button.setEnabled(False)
@@ -126,6 +128,10 @@ class MainWindow(QMainWindow):
         self.blacklevel_slider.setEnabled(True)
         self.width_slider.setEnabled(True)
         self.height_slider.setEnabled(True)
+        if self.cam.settings['height'] != 1024:
+            self.y_slider.setEnabled(True)
+        if self.cam.settings['width'] != 1024:
+            self.x_slider.setEnabled(True)
         self.framerate_slider.setEnabled(True)
         self.seconds_slider.setEnabled(True)
         self.record_button.setEnabled(True)
