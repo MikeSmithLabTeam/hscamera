@@ -111,18 +111,12 @@ class Camera:
     def set_height(self, height):
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['height'] = height
-        self.send_camera_command('#R(+'+str(self.settings['width'])+','+str(height)+')')
-        if self.started:
-            self.stop()
-        height_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_HEIGHT')
-        SISO.Fg_setParameterWithInt(self.frame_grabber, height_id, height, 0)
-        if self.ready:
-            self.start()
+        self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
 
     def set_width(self, width):
         assert (width % 16 == 0) and (width <= 1024), 'Frame height must be divisible by 2 and at most 1024'
         self.settings['width'] = width
-        self.send_camera_command('#R(+' + str(width) + ',' + str(self.settings['height']) + ')')
+        self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
 
     def set_x(self, x):
         self.settings['x'] = x
