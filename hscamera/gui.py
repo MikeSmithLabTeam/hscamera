@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.timer.start(30)
 
     def update_image(self):
-        im = self.cam._get_img()
+        im = self.cam.get_current_img()
         self.image_viewer.setImage(im)
 
     def width_changed(self, val):

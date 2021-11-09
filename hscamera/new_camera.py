@@ -175,14 +175,11 @@ class Camera:
         # Starts continuous grabbing in background.
         err = SISO.Fg_AcquireEx(self.frame_grabber, 0, self.numpics, SISO.ACQ_STANDARD, self.mem_handle)
 
-    def _get_img(self, index=None):
-        if index is None:
-            # The number of the last, completely transferred image
-            index = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
-        #Get img from index of buffer
-        img_ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
-        nImg = SISO.getArrayFrom(img_ptr, self.settings['width'], self.settings['height'])
-        return gray_to_bgr(nImg)
+    def get_current_img(self):
+        index = SISO.Fg_getLastPicNumberEx(self.frame_grabber, 0, self.mem_handle)
+        ptr = SISO.Fg_getImagePtrEx(self.frame_grabber, index, 0, self.mem_handle)
+        im = SISO.getArrayFrom(ptr, self.settings['width'], self.settings['height'])
+        return gray_to_bgr(im)
 
     def display_img(self):
         # Displays img in buffer
