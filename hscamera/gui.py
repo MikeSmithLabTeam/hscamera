@@ -34,6 +34,7 @@ class MainWindow(QMainWindow):
         self.cam.set_width(val)
         self.update_max_framerate()
         self.update_x_max(val)
+        self.update_max_seconds()
 
     def update_x_max(self, val):
         old_val = self.x_slider.value()
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         self.cam.set_height(val)
         self.update_max_framerate()
         self.update_y_max(val)
+        self.update_max_seconds()
 
     def x_changed(self, val):
         self.cam.set_x(val)
@@ -59,6 +61,7 @@ class MainWindow(QMainWindow):
     def framerate_changed(self, val):
         self.cam.set_framerate(val)
         self.update_max_exposure()
+        self.update_max_seconds()
 
     def update_max_exposure(self):
         max_exposure = self.cam.get_max_exposure()
@@ -75,6 +78,11 @@ class MainWindow(QMainWindow):
             framerate = max_framerate
             self.cam.set_framerate(framerate)
         self.framerate_slider.changeSettings(10, max_framerate, 1, framerate)
+
+    def update_max_seconds(self):
+        max_num_pics = self.cam.get_max_numpics()
+        max_seconds = max_num_pics / self.cam.settings['framerate']
+        self.seconds_slider.changeSettings(1, max_seconds, 1)
 
     def record_button_pressed(self):
         seconds = self.seconds_slider.value()

@@ -155,11 +155,25 @@ class Camera:
             result = self.camera_com.readline()
             return None
 
-    def initialise_buffer(self, numpics=1000):
+    def get_max_numpics(self):
+        # Maximum buffer size is just over 4GB so make sure buffer is less than 4GB
+        num_bytes_im = self.settings['width'] * self.settings['height']
+        num_ims = int(4e9//num_bytes_im)
+        return num_ims
+
+
+    def initialise_buffer(self, numpics=None):
+        if numpics is None:
+            numpics = self.get_max_numpics()
+
         self.numpics = numpics
         buffer_size = self.settings['width'] * self.settings['height'] * numpics
+        print('Buffer size: ', buffer_size/1e9, ' GB')
         # Reserves an aera of the main memory as frame buffer, blocks it and makes it available for the user
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, numpics)
+        if self.mem_handle is None:
+            last_err = SISO.Fg_getLastErrorDescription(self.frame_grabber)
+            print('last err: ', last_err)
 
     def initialise_window(self):
         # Creates a display window
@@ -176,7 +190,7 @@ class Camera:
             self.clear_buffer()
         if numpics is None:
             numpics = SISO.GRAB_INFINITE
-            self.initialise_buffer(1000)
+            self.initialise_buffer()
         else:
             self.initialise_buffer(numpics)
 
