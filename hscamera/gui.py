@@ -63,6 +63,28 @@ class MainWindow(QMainWindow):
         self.update_max_exposure()
         self.update_max_seconds()
 
+    def exposure_changed(self, val):
+        self.cam.set_exposure(val)
+        self.dualslope_slider.changeSettings(0, val, 1)
+
+    def dualslope_changed(self, val):
+        if val == 0:
+            self.cam.set_dualslope_state(0)
+            self.cam.set_dualslope_time(1)
+            self.tripleslope_slider.changeSettings(0, 0, 1, 0)
+        else:
+            self.cam.set_dualslope_state(1)
+            self.cam.set_dualslope_time(val)
+            self.tripleslope_slider.changeSettings(0, val, 1)
+
+    def tripleslope_changed(self, val):
+        if val == 0:
+            self.cam.set_tripleslope_state(0)
+            self.cam.set_tripleslope_time(1)
+        else:
+            self.cam.set_tripleslope_state(1)
+            self.cam.set_tripleslope_time(val)
+
     def update_max_exposure(self):
         max_exposure = self.cam.get_max_exposure()
         exposure = self.cam.settings['exposure']
@@ -184,7 +206,7 @@ class MainWindow(QMainWindow):
         hlayout.addLayout(tool_layout, 0.3)
 
         self.exposure_slider = qtwidgets.QCustomSlider(self, 'Exposure', 1, self.cam.get_max_exposure(), 1, value_=self.cam.settings['exposure'], label=True)
-        self.exposure_slider.valueChanged.connect(self.cam.set_exposure)
+        self.exposure_slider.valueChanged.connect(self.exposure_changed)
         self.exposure_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.exposure_slider)
 
@@ -202,6 +224,18 @@ class MainWindow(QMainWindow):
         self.blacklevel_slider.valueChanged.connect(self.cam.set_blacklevel)
         self.blacklevel_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.blacklevel_slider)
+
+        dualslope_val = 0 if self.cam.settings['dualslope'] == 0 else self.cam.settings['dualslope_time']
+        self.dualslope_slider = qtwidgets.QCustomSlider(self, 'Dualslope', 0, self.cam.settings['exposure'], 1, value_=dualslope_val, label=True)
+        self.dualslope_slider.valueChanged.connect(self.dualslope_changed)
+        self.dualslope_slider.settings_button.setVisible(False)
+        tool_layout.addWidget(self.dualslope_slider)
+
+        tripleslope_val = 0 if self.cam.settings['tripleslope'] == 0 else self.cam.settings['tripleslope_time']
+        self.tripleslope_slider = qtwidgets.QCustomSlider(self, 'Tripleslope', 0, self.cam.settings['dualslope_time'], 1, value_=tripleslope_val, label=True)
+        self.tripleslope_slider.valueChanged.connect(self.tripleslope_changed)
+        self.tripleslope_slider.settings_button.setVisible(False)
+        tool_layout.addWidget(self.tripleslope_slider)
 
         self.height_slider = qtwidgets.QCustomSlider(self, 'Height', 2, 1024, 2, value_=self.cam.settings['height'], label=True)
         self.height_slider.valueChanged.connect(self.height_changed)

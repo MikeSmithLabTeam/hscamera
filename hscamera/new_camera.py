@@ -21,6 +21,11 @@ default_settings = {
     'exposure': 15000,
     'fpn_correction': 1,
     'blacklevel': 100,
+    'dualslope': 0,
+    'tripleslope': 0,
+    'dualslope_time': 1,
+    'tripleslope_time': 1,
+
     'x': 0,
     'y': 0
 }
@@ -73,6 +78,30 @@ class Camera:
         self.set_blacklevel(self.settings['blacklevel'])
         self.set_x(self.settings['x'])
         self.set_y(self.settings['y'])
+        self.set_dualslope_state(self.settings['dualslope'])
+        self.set_dualslope_time(self.settings['dualslope_time'])
+        self.set_tripleslope_state(self.settings['tripleslope'])
+        self.set_tripleslope_time(self.settings['tripleslope_time'])
+
+    def set_dualslope_state(self, value):
+        assert (value == 1) or (value == 0), 'Value must be 0 or 1'
+        self.settings['dualslope'] = value
+        self.send_camera_command('#D{}'.format(value))
+
+    def set_dualslope_time(self, value):
+        assert (value >= 1) and (value <= self.settings['exposure']), 'Value must be between 1 and the exposure time'
+        self.settings['dualslope_time'] = value
+        self.send_camera_command('#d{}'.format(value))
+
+    def set_tripleslope_state(self, value):
+        assert (value == 1) or (value == 0), 'Value must be 0 or 1'
+        self.settings['tripleslope'] = value
+        self.send_camera_command('#T{}'.format(value))
+
+    def set_tripleslope_time(self, value):
+        assert (value >= 1) and (value <= self.settings['dualslope_time']), 'Value must be between 1 and the dualslope time'
+        self.settings['tripleslope_time'] = value
+        self.send_camera_command('#t{}'.format(value))
 
     def set_blacklevel(self, value):
         assert (value >= 0) and (value <=255), 'Blacklevel must be between 0 and 255'
