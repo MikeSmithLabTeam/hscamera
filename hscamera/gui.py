@@ -235,6 +235,7 @@ class MainWindow(QMainWindow):
 
         self.seconds_slider = qtwidgets.QCustomSlider(self, 'Record Time (s)', 1, 30, 1, value_=10, label=True)
         self.seconds_slider.valueChanged.connect(self.seconds_slider_changed)
+        self.seconds_slider.settings_button.setVisible(False)
         tool_layout.addWidget(self.seconds_slider)
 
         self.record_button = QPushButton('Record', self)
