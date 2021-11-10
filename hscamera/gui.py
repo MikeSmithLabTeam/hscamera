@@ -1,9 +1,10 @@
 import time
 import logging
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar
+from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar, QToolBar, QToolButton, QAction
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtCore import QTimer, QThread, QObject
+from PyQt5.QtGui import QIcon
 import qtwidgets
 import sys
 import numpy as np
@@ -210,14 +211,34 @@ class MainWindow(QMainWindow):
         logging.info('Seconds slider set to {}'.format(val))
         self.seconds = val
 
+    def load_settings(self):
+        logging.debug('Load settings clicked')
+
+    def save_settings(self):
+        logging.debug('Save settings clicked')
+
     def setup_gui(self):
         logging.debug('Starting gui setup')
         self.setWindowTitle('High Speed Camera GUI')
+
+        self.toolbar = self.addToolBar('File')
+        self.load_action = QAction(QIcon("/usr/share/icons/HighContrast/16x16/actions/document-open.png"), 'Open settings', self)
+        self.load_action.triggered.connect(self.load_settings)
+        self.toolbar.addAction(self.load_action)
+
+        self.save_action = QAction(QIcon("/usr/share/icons/HighContrast/16x16/actions/document-save.png"), 'Save settings', self)
+        self.save_action.triggered.connect(self.save_settings)
+        self.toolbar.addAction(self.save_action)
+
+
+
         self.image_viewer = qtwidgets.QImageViewer(self)
         im = self.cam.get_current_img()
         self.image_viewer.setImage(im)
 
         layout = QVBoxLayout()
+        # layout.addWidget(self.toolbar)
+
         hlayout = QHBoxLayout()
         layout.addLayout(hlayout)
 
