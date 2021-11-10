@@ -76,18 +76,25 @@ class MainWindow(QMainWindow):
     def exposure_changed(self, val):
         logging.debug('exposure slider changed to {}'.format(val))
         self.cam.set_exposure(val)
-        self.dualslope_slider.changeSettings(0, val, 1)
+        self.update_max_dualslope(val)
+
+    def update_max_dualslope(self, exposure):
+        logging.debug('Max dualslope set to {}'.format(exposure))
+        self.dualslope_slider.changeSettings(0, exposure, 1)
 
     def dualslope_changed(self, val):
         logging.debug('dualslope slider change to {}'.format(val))
         if val == 0:
             self.cam.set_dualslope_state(0)
             self.cam.set_dualslope_time(1)
-            self.tripleslope_slider.changeSettings(0, 0, 1, 0)
         else:
             self.cam.set_dualslope_state(1)
             self.cam.set_dualslope_time(val)
-            self.tripleslope_slider.changeSettings(0, val, 1)
+        self.update_max_tripleslope(val)
+
+    def update_max_tripleslope(self, dualslope):
+        logging.debug('Tripleslope max set to {}'.format(dualslope))
+        self.tripleslope_slider.changeSettings(0, dualslope, 1)
 
     def tripleslope_changed(self, val):
         logging.debug('tripleslope slider changed to {}'.format(val))
