@@ -1,4 +1,5 @@
 import sys
+import logging
 
 sys.path.append("/opt/SiliconSoftware/Runtime5.7.0/SDKWrapper/PythonWrapper/python36/bin")
 sys.path.append("/opt/SiliconSoftware/Runtime5.7.0/lib64")
@@ -43,24 +44,26 @@ class Camera:
 
     def __init__(self, settings_file=None, window=True):
         if settings_file is None:
+            logging.info('Loading default settings')
             self.settings = default_settings
         else:
+            logging.info('Loading settings from {}'.format(settings_file))
             with open(settings_file, 'r') as f:
                 self.settings = json.load(f)
 
         self.ready = False
         self.started = False
+
         self.no_image = load('no_image.jpg')
         # Not Really sure why I have both of these lines
+
+        logging.info('Initialising framegrabber with mcf file')
         self.frame_grabber = SISO.Fg_InitConfig(self.mcf_filename, 0)
-         # self.print_all_framegrabber_parameters()
         SISO.Fg_loadConfig(self.frame_grabber, self.mcf_filename)
 
         self.setup_camera_com()
 
         self.setup_initial_settings()
-
-        self.initialise_buffer()
 
         self.ready = True
 
@@ -69,6 +72,7 @@ class Camera:
             self.initialise_window()
 
     def setup_initial_settings(self):
+        logging.info('Setting intial parameters from dictionary')
         self.set_gain(self.settings['gain'])
         self.set_fpn_correction(self.settings['fpn_correction'])
         self.set_width(self.settings['width'])
@@ -85,36 +89,43 @@ class Camera:
 
     def set_dualslope_state(self, value):
         assert (value == 1) or (value == 0), 'Value must be 0 or 1'
+        logging.debug('dualslope set to {}'.format(value))
         self.settings['dualslope'] = value
         self.send_camera_command('#D{}'.format(value))
 
     def set_dualslope_time(self, value):
         assert (value >= 1) and (value <= self.settings['exposure']), 'Value must be between 1 and the exposure time'
+        logging.debug('dualslope_time set to {}'.format(value))
         self.settings['dualslope_time'] = value
         self.send_camera_command('#d{}'.format(value))
 
     def set_tripleslope_state(self, value):
         assert (value == 1) or (value == 0), 'Value must be 0 or 1'
+        logging.debug('tripleslope set to {}'.format(value))
         self.settings['tripleslope'] = value
         self.send_camera_command('#T{}'.format(value))
 
     def set_tripleslope_time(self, value):
         assert (value >= 1) and (value <= self.settings['dualslope_time']), 'Value must be between 1 and the dualslope time'
+        logging.debug('tripleslope_time set to {}'.format(value))
         self.settings['tripleslope_time'] = value
         self.send_camera_command('#t{}'.format(value))
 
     def set_blacklevel(self, value):
         assert (value >= 0) and (value <=255), 'Blacklevel must be between 0 and 255'
+        logging.debug('blacklevel set to {}'.format(value))
         self.settings['blacklevel'] = value
         self.send_camera_command('#z('+str(value)+')')
 
     def set_fpn_correction(self, value):
         assert value in [0, 1], 'Value must be 0 or 1'
+        logging.debug('fpn_correction set to {}'.format(value))
         self.settings['fpn_correction'] = value
         self.send_camera_command('#F('+str(value)+')')
 
     def set_gain(self, value):
         assert value in [1, 1.5, 2, 2.25, 3, 4], 'Value must be in [1, 1.5, 2, 2.25, 3, 4]'
+        logging.debug('gain set to {}'.format(value))
         self.settings['gain'] = value
         command = '#G('+str(value)+')'
         self.send_camera_command(command)
@@ -126,7 +137,7 @@ class Camera:
             self.settings['exposure'] = max_exposure
         else:
             self.settings['exposure'] = value
-
+        logging.debug('Exposure set to {}'.format(self.settings['exposure']))
         self.send_camera_command('#e('+str(self.settings['exposure'])+')')
 
     def get_max_exposure(self):
@@ -139,33 +150,35 @@ class Camera:
 
     def set_height(self, height):
         assert (height%2 == 0) and (height <=1024), 'Frame height must be divisible by 2 and at most 1024'
+        logging.debug('Height set to {}'.format(height))
         self.settings['height'] = height
         self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
 
     def set_width(self, width):
         assert (width % 16 == 0) and (width <= 1024), 'Frame height must be divisible by 2 and at most 1024'
+        logging.debug('Width set to {}'.format(width))
         self.settings['width'] = width
         self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
 
     def set_x(self, x):
+        logging.debug('x set to {}'.format(x))
         self.settings['x'] = x
         self.send_camera_command('#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'], self.settings['height']))
 
     def set_y(self, y):
+        logging.debug('y set to {}'.format(y))
         self.settings['y'] = y
         self.send_camera_command(
             '#R({},{},{},{})'.format(self.settings['x'], self.settings['y'], self.settings['width'],
                                      self.settings['height']))
-        if self.started: self.stop()
-        y_id = SISO.Fg_getParameterIdByName(self.frame_grabber, 'FG_YOFFSET')
-        SISO.Fg_setParameterWithInt(self.frame_grabber, y_id, y, 0)
-        if self.ready: self.start()
 
     def set_framerate(self, value):
+        logging.debug('framerate set to {}'.format(value))
         self.settings['framerate'] = value
         self.send_camera_command('#r('+str(value)+')')
 
     def setup_camera_com(self):
+        logging.debug('Camera communication initialised')
         command = '/opt/SiliconSoftware/Runtime5.7.0/bin/clshell -a -i'
         self.camera_com = pexpect.spawn(command)
         for f in range(5):
@@ -197,21 +210,10 @@ class Camera:
 
         self.numpics = numpics
         buffer_size = self.settings['width'] * self.settings['height'] * numpics
-        print('Buffer size: ', buffer_size/1e9, ' GB')
+        logging.debug('Initialising buffer of size {} GB'.format(buffer_size/1e9))
         # Reserves an aera of the main memory as frame buffer, blocks it and makes it available for the user
         self.mem_handle = SISO.Fg_AllocMemEx(self.frame_grabber, buffer_size, numpics)
-        if self.mem_handle is None:
-            last_err = SISO.Fg_getLastErrorDescription(self.frame_grabber)
-            print('last err: ', last_err)
-
-    def initialise_window(self):
-        # Creates a display window
-        self.display = SISO.CreateDisplay(8, self.settings['width'], self.settings['height'])
-        # Configures the size of the frame buffer, allowing a window smaller than the frame buffer?
-        SISO.SetBufferWidth(0, self.settings['width'], self.settings['height'])
-
-    def close_display(self):
-        SISO.CloseDisplay(self.display)
+        logging.info('Buffer initialised')
 
     def start(self, numpics=None):
         if self.started:
@@ -225,6 +227,7 @@ class Camera:
 
         # Starts continuous grabbing in background.
         err = SISO.Fg_AcquireEx(self.frame_grabber, 0, numpics, SISO.ACQ_STANDARD, self.mem_handle)
+        logging.info('Image acquisition started')
         self.started = True
 
     def get_current_img(self):
@@ -241,10 +244,12 @@ class Camera:
 
     def stop(self):
         SISO.Fg_stopAcquire(self.frame_grabber, 0)
+        logging.info('Image acquisition stopped')
         self.started = False
 
     def clear_buffer(self):
         SISO.Fg_FreeMemEx(self.frame_grabber, self.mem_handle)
+        logging.info('Memory buffer cleared')
 
     def save_vid(self, filename=None, signal=None):
         date_time = self._datetimestr()
@@ -252,13 +257,14 @@ class Camera:
             filename = self.filename_base + str(date_time) + '.MP4'
 
         writevid = WriteVideo(filename=filename, frame_size=np.shape(self.get_current_img()))
-
+        logging.info('Video writing started')
         for frame in range(1, self.numpics, 1):
             if signal is not None:
                 signal(frame)
             nImg = self.get_img(frame)
             writevid.add_frame(nImg)
         writevid.close()
+        logging.info('Video writing finished')
         # self.clear_buffer()
         self.start()
 

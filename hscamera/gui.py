@@ -1,4 +1,5 @@
 import time
+import logging
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
@@ -31,43 +32,54 @@ class MainWindow(QMainWindow):
         self.image_viewer.setImage(im)
 
     def width_changed(self, val):
+        logging.debug('Width slider changed to {}'.format(val))
         self.cam.set_width(val)
         self.update_max_framerate()
         self.update_x_max(val)
         self.update_max_seconds()
 
-    def update_x_max(self, val):
+    def update_x_max(self, width):
         old_val = self.x_slider.value()
-        self.x_slider.changeSettings(0, 1024-val, 16, old_val)
-        self.x_slider.setEnabled(val != 1024)
+        val = 1024 - width
+        logging.debug('x_slider max set to {}'.format(val))
+        self.x_slider.changeSettings(0, val, 16, old_val)
+        self.x_slider.setEnabled(width != 1024)
 
-    def update_y_max(self, val):
+    def update_y_max(self, height):
         old_val = self.y_slider.value()
-        self.y_slider.changeSettings(0, 1024-val, 2, old_val)
-        self.y_slider.setEnabled(val != 1024)
+        val = 1024 - height
+        logging.debug('y_slider max set to {}'.format(val))
+        self.y_slider.changeSettings(0, val, 2, old_val)
+        self.y_slider.setEnabled(height != 1024)
 
     def height_changed(self, val):
+        logging.debug('Height slider changed to {}'.format(val))
         self.cam.set_height(val)
         self.update_max_framerate()
         self.update_y_max(val)
         self.update_max_seconds()
 
     def x_changed(self, val):
+        logging.debug('x slider changed to {}'.format(val))
         self.cam.set_x(val)
 
     def y_changed(self, val):
+        logging.debug('y slider changed to {}'.format(val))
         self.cam.set_y(val)
 
     def framerate_changed(self, val):
+        logging.debug('framerate slider changed to {}'.format(val))
         self.cam.set_framerate(val)
         self.update_max_exposure()
         self.update_max_seconds()
 
     def exposure_changed(self, val):
+        logging.debug('exposure slider changed to {}'.format(val))
         self.cam.set_exposure(val)
         self.dualslope_slider.changeSettings(0, val, 1)
 
     def dualslope_changed(self, val):
+        logging.debug('dualslope slider change to {}'.format(val))
         if val == 0:
             self.cam.set_dualslope_state(0)
             self.cam.set_dualslope_time(1)
@@ -78,6 +90,7 @@ class MainWindow(QMainWindow):
             self.tripleslope_slider.changeSettings(0, val, 1)
 
     def tripleslope_changed(self, val):
+        logging.debug('tripleslope slider changed to {}'.format(val))
         if val == 0:
             self.cam.set_tripleslope_state(0)
             self.cam.set_tripleslope_time(1)
@@ -91,6 +104,7 @@ class MainWindow(QMainWindow):
         if exposure > max_exposure:
             exposure = max_exposure
             self.cam.set_exposure(exposure)
+        logging.debug('exposure slider maximum set to {}'.format(max_exposure))
         self.exposure_slider.changeSettings(1, max_exposure, 1, exposure)
 
     def update_max_framerate(self):
@@ -99,14 +113,17 @@ class MainWindow(QMainWindow):
         if framerate > max_framerate:
             framerate = max_framerate
             self.cam.set_framerate(framerate)
+        logging.debug('framerate slider maximum set to {}'.format(max_framerate))
         self.framerate_slider.changeSettings(10, max_framerate, 1, framerate)
 
     def update_max_seconds(self):
         max_num_pics = self.cam.get_max_numpics()
         max_seconds = max_num_pics / self.cam.settings['framerate']
+        logging.debug('seconds slider maximum set to {}'.format(max_seconds))
         self.seconds_slider.changeSettings(1, max_seconds, 1)
 
     def record_button_pressed(self):
+        logging.debug('record button pressed')
         seconds = self.seconds_slider.value()
         images = seconds * self.framerate_slider.value()
         self.images = images
@@ -117,7 +134,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, seconds)
         self.progress_bar.setValue(0)
         self.status_bar.showMessage('Recording...')
-        print("Record {} images".format(images))
+        logging.info('Recording of {} images starting'.format(images))
         self.cam.start(images)
         self.thread = QThread(self)
 
@@ -139,6 +156,7 @@ class MainWindow(QMainWindow):
         self.thread.start()
 
     def lock_options(self):
+        logging.debug('Sliders locking')
         self.exposure_slider.setEnabled(False)
         self.gain_slider.setEnabled(False)
         self.fpn_correct_slider.setEnabled(False)
@@ -152,6 +170,7 @@ class MainWindow(QMainWindow):
         self.record_button.setEnabled(False)
 
     def unlock_options(self):
+        logging.debug('Sliders unlocking')
         self.exposure_slider.setEnabled(True)
         self.gain_slider.setEnabled(True)
         self.fpn_correct_slider.setEnabled(True)
@@ -167,21 +186,25 @@ class MainWindow(QMainWindow):
         self.record_button.setEnabled(True)
 
     def finish_recording(self):
+        logging.info('Recording finished')
         self.cam.stop()
         self.status_bar.showMessage('Saving Video ...')
         self.progress_bar.setValue(0)
         self.progress_bar.setMaximum(self.images)
 
     def finish_saving(self):
+        logging.info('Saving finished')
         self.progress_bar.hide()
         self.unlock_options()
         self.status_bar.showMessage('Ready')
 
 
     def seconds_slider_changed(self, val):
+        logging.info('Seconds slider set to {}'.format(val))
         self.seconds = val
 
     def setup_gui(self):
+        logging.debug('Starting gui setup')
         self.setWindowTitle('High Speed Camera GUI')
         self.image_viewer = qtwidgets.QImageViewer(self)
         im = self.cam.get_current_img()
@@ -281,8 +304,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
         self.resize(1024, 720)
 
+        logging.debug('Gui setup finished')
+
     def quit(self):
-        print("Cleaning up before quitting")
+        logging.info('Cleaning up before quitting')
         self.cam.stop()
         self.cam.clear_buffer()
 
@@ -305,6 +330,7 @@ class RecordWorker(QObject):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     app = QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()
