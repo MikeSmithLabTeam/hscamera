@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon
 import qtwidgets
 import sys
 import numpy as np
-from new_camera import Camera
+from camera import Camera
 
 
 
