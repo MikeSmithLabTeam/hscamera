@@ -1,7 +1,7 @@
 import time
 import logging
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar, QToolBar, QToolButton, QAction
+from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSlider, QDoubleSpinBox, QComboBox, QProgressBar, QStatusBar, QToolBar, QToolButton, QAction, QFileDialog
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtCore import QTimer, QThread, QObject
 from PyQt5.QtGui import QIcon
@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.cam = Camera(window=False)
+        self.cam = Camera()
         self.cam.start()
         self.setup_gui()
 
@@ -213,9 +213,13 @@ class MainWindow(QMainWindow):
 
     def load_settings(self):
         logging.debug('Load settings clicked')
+        fname = QFileDialog.getOpenFileName(self, caption='Open settings file', filter='JSON files (*.json)')
+        self.cam.load_new_settings(fname[0])
 
     def save_settings(self):
         logging.debug('Save settings clicked')
+        fname = QFileDialog.getSaveFileName(self, caption='Save settings file', filter='JSON files (*.json)')
+        self.cam.save_settings(fname[0]+'.json')
 
     def setup_gui(self):
         logging.debug('Starting gui setup')
@@ -358,7 +362,7 @@ class RecordWorker(QObject):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     app = QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()

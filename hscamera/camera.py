@@ -42,14 +42,9 @@ class Camera:
     mcf_filename = config_dir + 'current.mcf' # If this file doesn't exist make it using microDisplayX
     filename_base = '/home/ppxjd3/Videos/'
 
-    def __init__(self, settings_file=None, window=True):
-        if settings_file is None:
-            logging.info('Loading default settings')
-            self.settings = default_settings
-        else:
-            logging.info('Loading settings from {}'.format(settings_file))
-            with open(settings_file, 'r') as f:
-                self.settings = json.load(f)
+    def __init__(self, settings_file=None):
+
+        self.settings = self.load_settings(settings_file)
 
         self.ready = False
         self.started = False
@@ -67,9 +62,23 @@ class Camera:
 
         self.ready = True
 
+    def load_settings(self, filename):
+        if filename is None:
+            logging.info('Loading default settings')
+            settings = default_settings
+        else:
+            logging.info('Loading settings from {}'.format(filename))
+            with open(filename, 'r') as f:
+                settings = json.load(f)
+        return settings
 
-        if window:
-            self.initialise_window()
+    def load_new_settings(self, filename):
+        self.settings = self.load_settings(filename)
+        self.setup_initial_settings()
+
+    def save_settings(self, filename):
+        with open(filename, 'w') as f:
+            json.dump(self.settings, f)
 
     def setup_initial_settings(self):
         logging.info('Setting intial parameters from dictionary')
