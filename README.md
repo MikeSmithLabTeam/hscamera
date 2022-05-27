@@ -1,6 +1,16 @@
 # hscamera
 high speed camera software
 
+# Python environment guide
+Requires the following libraries:
+1. pyqt5
+2. qtwidgets (https://github.com/MikeSmithLabTeam/qtwidgets)
+3. labvision (https://github.com/MikeSmithLabTeam/labvision)
+4. numpy
+
+Add the following to the python content root
+1. /opt/SiliconSoftware/Runtime5.7.0/SDKWrapper/PythonWrapper/python36/lib
+2. /opt/ConfigFiles
 
 # Linux Installation Guide
 
@@ -72,3 +82,4 @@ sudo chmod -R g+w <INSTALLDIR>/genicam/cache
 
 ## Start the generic service
 ```<INSTALLDIR>/bin/gs start```
+
