@@ -42,8 +42,8 @@ class Camera:
     mcf_filename = config_dir + 'current.mcf' # If this file doesn't exist make it using microDisplayX
     filename_base = '/home/ppxjd3/Videos/'
 
-    def __init__(self, settings_file=None):
-
+    def __init__(self, parent, settings_file=None):
+        self.parent = parent
         self.settings = self.load_settings(settings_file)
 
         self.ready = False
