@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.cam = Camera()
+        self.cam = Camera(self)
         self.cam.start()
         self.setup_gui()
 
