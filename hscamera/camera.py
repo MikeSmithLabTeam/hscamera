@@ -1,7 +1,9 @@
 import sys
 import logging
-
+#test
 sys.path.append("/opt/SiliconSoftware/Runtime5.7.0/SDKWrapper/PythonWrapper/python36/bin")
+sys.path.append("/opt/SiliconSoftware/Runtime5.7.0/SDKWrapper/PythonWrapper/python36/lib")
+sys.path.append("/opt/ConfigFiles")
 sys.path.append("/opt/SiliconSoftware/Runtime5.7.0/lib64")
 
 import SiSoPyInterface as SISO
@@ -40,10 +42,10 @@ class Camera:
 
     config_dir = '/opt/ConfigFiles/'
     mcf_filename = config_dir + 'current.mcf' # If this file doesn't exist make it using microDisplayX
-    filename_base = '/home/ppxjd3/Videos/'
+    filename_base = '~/Videos/'
 
-    def __init__(self, parent, settings_file=None):
-        self.parent = parent
+    def __init__(self, settings_file=None):
+
         self.settings = self.load_settings(settings_file)
 
         self.ready = False
@@ -68,6 +70,8 @@ class Camera:
             settings = default_settings
         else:
             logging.info('Loading settings from {}'.format(filename))
+            print('name')
+            print(filename)
             with open(filename, 'r') as f:
                 settings = json.load(f)
         return settings
