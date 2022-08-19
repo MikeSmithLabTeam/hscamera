@@ -220,6 +220,27 @@ class MainWindow(QMainWindow):
         logging.debug('Save settings clicked')
         fname = QFileDialog.getSaveFileName(self, caption='Save settings file', filter='JSON files (*.json)')
         self.cam.save_settings(fname[0]+'.json')
+       
+    def update_sliders(self):
+        #only called when loading settings file
+        self.height_slider.slider.setValue(self.cam.settings['height'])
+        self.height_slider.value_label.setText(str(self.cam.settings['height']))
+        self.width_slider.slider.setValue(self.cam.settings['width'])
+        self.width_slider.value_label.setText(str(self.cam.settings['width']))
+        self.gain_slider.slider.setValue(self.cam.settings['gain'])
+        self.gain_slider.value_label.setText(str(self.cam.settings['gain']))
+        self.fpn_correct_slider.slider.setValue(self.cam.settings['fpn_correction'])
+        self.fpn_correct_slider.value_label.setText(str(self.cam.settings['fpn_correction']))
+        self.framerate_slider.slider.setValue(self.cam.settings['framerate'])
+        self.framerate_slider.value_label.setText(str(self.cam.settings['framerate']))
+        self.exposure_slider.slider.setValue(self.cam.settings['exposure'])
+        self.exposure_slider.value_label.setText(str(self.cam.settings['exposure']))
+        self.blacklevel_slider.slider.setValue(self.cam.settings['blacklevel'])
+        self.blacklevel_slider.value_label.setText(str(self.cam.settings['blacklevel']))
+        self.x_slider.slider.setValue(self.cam.settings['x'])
+        self.x_slider.value_label.setText(str(self.cam.settings['x']))
+        self.y_slider.slider.setValue(self.cam.settings['y'])
+        self.y_slider.value_label.setText(str(self.cam.settings['y']))
 
     def setup_gui(self):
         logging.debug('Starting gui setup')
